@@ -51,48 +51,64 @@ app.post("/", function (request, response) {
   function handleAverageUber (assistant) {
     let location = assistant.getArgument(UBER_LOCATION);
     let sum = 0;
-    if (location != null) {
-      sum = getUberPrice(location);
-      console.log(sum);
-    }
-    const uberAPIUrl = "http://api.reimaginebanking.com/merchants/58779cb61756fc834d8e8742/accounts/5877aeff1756fc834d8e878c/purchases?key=5f754f5661ce9a56b4cff9f26ca2ba58";
-    
     let speech = ""
-    let balance = 0;
-
-    //  console.log(balance + "is balance");
-    httpRequest({  
-      method: "GET",
-      uri: uberAPIUrl,
-      json: true
-    }).then(function (json) {
-      if (location == null) {
-        sum =  findAverageCost(json);
-      }
-      console.log('sum is : ' + sum);
-      
-      findCurrentBalance(function(balance) {
-        if (balance >= sum) {
-          speech = "You can afford this uber!"
-        } else {
-          speech = "You cannot afford this uber. You have " + balance + "in your account and your average uber costs " + sum + "Do you want more info?";
-        }
-        replyToUser(request, response, assistant, speech);
+    if (location != null) {
+      getUberPrice(location, function(sum) {
+		console.log('sum is : ' + sum);
+	    findCurrentBalance(function(balance) {
+	        if (balance >= sum) {
+	          speech = "You can afford this uber!"
+	        } else {
+	          speech = "You cannot afford this uber. You have " + balance + "in your account and your uber costs " + sum + " Do you want more info?";
+	        }
+	        replyToUser(request, response, assistant, speech);
+	      });
       });
-    })
-    .catch(function (err) {
-      console.log("Error:" + err);
-      //TODO: reply to user with some kind of error message
-    });
+      
+    } else {
+	    const uberAPIUrl = "http://api.reimaginebanking.com/merchants/58779cb61756fc834d8e8742/accounts/5877aeff1756fc834d8e878c/purchases?key=5f754f5661ce9a56b4cff9f26ca2ba58";
+	    
+	    
+	    let balance = 0;
+
+	    //  console.log(balance + "is balance");
+	    httpRequest({  
+	      method: "GET",
+	      uri: uberAPIUrl,
+	      json: true
+	    }).then(function (json) {
+	      sum =  findAverageCost(json);
+	      console.log('sum is : ' + sum);
+	      
+	      findCurrentBalance(function(balance) {
+	        if (balance >= sum) {
+	          speech = "You can afford this uber!"
+	        } else {
+	          speech = "You cannot afford this uber. You have " + balance + "in your account and your average uber costs " + sum + "Do you want more info?";
+	        }
+	        replyToUser(request, response, assistant, speech);
+	      });
+	    })
+
+	    .catch(function (err) {
+	      console.log("Error:" + err);
+	      //TODO: reply to user with some kind of error message
+	    });
+
+	 }
+
   }
 
-  function getUberPrice(query_location) {
+  function getUberPrice(query_location, callback) {
     googleMapsClient.places({
       query: query_location,
       location: [curr_lat, curr_long],
       radius: 50000
     }, function(err, response) {
-      if (err) console.error(err);
+      if (err) {
+      	console.error(err)
+      	callback(-1); 
+      }
       else {
         var coordinates = response.json.results[0].geometry.location;
         var end_lat = coordinates.lat;
@@ -101,10 +117,13 @@ app.post("/", function (request, response) {
         console.log(coordinates)
 
         uber.estimates.getPriceForRoute(curr_lat, curr_long, end_lat, end_long, function (err, res) {
-          if (err) console.error(err);
+          if (err) {
+          	console.error(err)
+          	callback(-1);
+          }
           else { 
             var average = (res.prices[0].low_estimate + res.prices[0].high_estimate) / 2;
-            return average; 
+            callback(average); 
           }  
         });
         
