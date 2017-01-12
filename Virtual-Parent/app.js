@@ -16,17 +16,8 @@ const jsonData = require("./data.json")
 // Create an instance of ApiAiAssistant that will listen on /
 app.post("/", function (request, response) {
   //action names from the API.AI intent
+  const UBER_AVG_ACTION = "uber_avg";
   const WELCOME_ACTION = "welcome";
-  const HOMETOWN_ACTION = "hometown";
-  const PHOTO_ACTION = "photo";
-  const FUN_FACT_ACTION = "funFact";
-  const WEATHER_ACTION = "weather";
-
-  //for summiteer hometown, photo, fun fact, etc..
-  const FIRST_NAME_ARG = "firstName";
-  const LAST_NAME_ARG = "lastName";
-  const DAY_ARG = "dayOfWeek";
-
   //API.AI assistant
   const assistant = new ApiAiAssistant({request: request, response: response});
 
@@ -35,93 +26,61 @@ app.post("/", function (request, response) {
     assistant.ask("Hi, I'm software summit bot - ask me a question!");
   }
 
-  //Handle summiteer hometown
-  function handleHometown (assistant) {
-    const firstName = assistant.getArgument(FIRST_NAME_ARG);
-    const lastName = assistant.getArgument(LAST_NAME_ARG);
-    
-    const personData = findPersonData(firstName, lastName);
-
-    let speech = "";
-
-   if(personData && personData.hometown){
-      const hometown = personData.hometown;
-      speech = firstName + (lastName ? " " + lastName : "") + " is from " + hometown;
-   }
-   else {
-      speech = "I wasn't able to find the hometown for " + firstName + (lastName ? " " + lastName : "");
-   }
-
-   replyToUser(request, response, assistant, speech);
-  }
-
-  //Handle summiteer photo
-  function handlePhoto(assistant) {
-    const firstName = assistant.getArgument(FIRST_NAME_ARG);
-    const lastName = assistant.getArgument(LAST_NAME_ARG);
-    const personData = findPersonData(firstName, lastName);
-
-    let speech = "";
-
-    if(personData){
-      const photoUrl = "https://s3.amazonaws.com/softwaresummit/" + personData.lastName + "%2C+" + personData.firstName + "_Photo.jpg";
-      speech = "Check out " + firstName + " here: :" + photoUrl;
-    }
-    else {
-      speech = "I wasn\"t able to find a photo for " + firstName;
-    }
-
-    replyToUser(request, response, assistant, speech);
-  }
-
-  //Handle summiteer hometown
-  function handleFunFact (assistant) {
-    const firstName = assistant.getArgument(FIRST_NAME_ARG);
-    const lastName = assistant.getArgument(LAST_NAME_ARG);
-    
-    const personData = findPersonData(firstName, lastName);
-
-    let speech = "";
-
-   if(personData && personData.funFact){
-      const funFact = personData.funFact;
-      speech = "Their fun fact is " + funFact;
-   }
-   else {
-      speech = "I wasn't able to find a fun fact for " + firstName + (lastName ? " " + lastName : "");
-   }
-
-   replyToUser(request, response, assistant, speech);
-  }
-
-  function handleWeather (assistant) {
-    const dayOfWeek = assistant.getArgument(DAY_ARG);
-
-    let speech = "";
-    const weatherAPIUrl = "http://api.wunderground.com/api/8e89907cda41161f/forecast10day/q/VA/Arlington.json";
-
+  function handleAverageUber () {
+    const uberAPIUrl = "http://api.reimaginebanking.com/merchants/58779cb61756fc834d8e8742/accounts/5877aeff1756fc834d8e878c/purchases?key=5f754f5661ce9a56b4cff9f26ca2ba58";
+    let sum = 0;
+    let speech = ""
     httpRequest({  
       method: "GET",
-      uri: weatherAPIUrl,
+      uri: uberAPIUrl,
       json: true
     }).then(function (json) {
-      speech = speechForWeatherAPIJson(dayOfWeek, json);
+      sum =  findAverageCost(json);
+      console.log('sum is : ' + sum);
+      let balance = findCurrentBalance();
+      // TODO: Add in the rent and such here.
+      if (balance >= sum) {
+        speech = "You can afford this uber!"
+      } else {
+        speech = "You cannot afford this uber. You have " + balance + "in your account and your average uber costs " + sum;
+      }
       replyToUser(request, response, assistant, speech);
+      return sum;
     })
     .catch(function (err) {
       console.log("Error:" + err);
-      speech = "Unsuccessful"
-      replyToUser(request, response, assistant, speech);
     });
   }
 
+  function findAverageCost(json) {
+    let i = 0;
+    let sum = 0;
+    for(; i < json.length; i++) {
+      console.log(i);
+      sum = sum + json[i].amount;
+      console.log(sum);
+    }
+    return sum;
+  }
+
+  function findCurrentBalance() {
+    const balanceURL = "http://api.reimaginebanking.com/accounts/5877aeff1756fc834d8e878c?key=5f754f5661ce9a56b4cff9f26ca2ba58";
+    httpRequest({  
+      method: "GET",
+      uri: balanceURL,
+      json: true
+    }).then(function (json) {
+      console.log(json.balance);
+      return json.balance + "lol";
+    })
+    .catch(function (err) {
+      console.log("Error:" + err);
+    });
+  }
   const actionMap = new Map();
   
   actionMap.set(WELCOME_ACTION, handleWelcome);
-  actionMap.set(HOMETOWN_ACTION, handleHometown);
-  actionMap.set(PHOTO_ACTION, handlePhoto);
-  actionMap.set(FUN_FACT_ACTION, handleFunFact);
-  actionMap.set(WEATHER_ACTION, handleWeather);
+  actionMap.set(UBER_AVG_ACTION, handleAverageUber);
   
 
   assistant.handleRequest(actionMap);
@@ -145,42 +104,4 @@ function replyToUser(request, response, assistant, speech) {
             source: "summit_bot"
         });
    }
-}
-
-
-function findPersonData(firstName,lastName){
-   let nameQuery = firstName;
-    if(lastName){
-        nameQuery += " " + lastName;
-    }
-
-    let topScore = 0.0;
-    let personIndexToReturn = 0;
-    for(let i = 0; i < jsonData.length; i++) {
-       const nameToCompare = (jsonData[i].firstName + " " + (lastName ? jsonData[i].lastName : "")).trim();
-       const score = nameToCompare.score(nameQuery);
-       if(score > topScore){
-            personIndexToReturn = i;
-            topScore = score;
-        }
-    }
-
-    if(topScore > 0.4){
-        return jsonData[personIndexToReturn];
-    }
-    else{
-        return null;
-    }
-}
-
-function speechForWeatherAPIJson(dayOfWeekRequested, json) {
-  const forecastDays = json.forecast.txt_forecast.forecastday;
-  for(let i = 0; i < forecastDays.length; i++) {
-    const dayOfWeek = forecastDays[i].title.toLowerCase();
-    dayOfWeekRequested = dayOfWeekRequested.toLowerCase();
-    if(dayOfWeek == dayOfWeekRequested) {
-      return "Here is the forecast for " + dayOfWeekRequested + ": " + forecastDays[i].fcttext;
-    }
-  }
-  return "I can't find the forecast for " + dayOfWeekRequested;
 }
