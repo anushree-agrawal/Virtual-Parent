@@ -17,6 +17,7 @@ const jsonData = require("./data.json")
 app.post("/", function (request, response) {
   //action names from the API.AI intent
   const UBER_AVG_ACTION = "uber_avg";
+  const FOOD_AVG_ACTION = "food_avg";
   const WELCOME_ACTION = "welcome";
   //API.AI assistant
   const assistant = new ApiAiAssistant({request: request, response: response});
@@ -64,7 +65,7 @@ app.post("/", function (request, response) {
       sum = sum + json[i].amount;
       console.log(sum);
     }
-    return sum;
+    return sum/i;
   }
 
   function findCurrentBalance(callback) {
@@ -82,10 +83,64 @@ app.post("/", function (request, response) {
       callback(0.0);
     });
   }
+
+  function handleAverageFood() {
+    const foodIDs = ["57cf75cea73e494d8675ec5b","57cf75cea73e494d8675ec57", "57cf75cea73e494d8675ec4d", "57cf75cea73e494d8675ec49"];
+    let sum = 0;
+    let speech = ""
+    let balance = 0;
+    let costs = [];
+    for (let i = 0; i<foodIDs.length; i++) {
+      let foodAPIUrl = "http://api.reimaginebanking.com/merchants/" + foodIDs[i] + "/accounts/5877aeff1756fc834d8e878c/purchases?key=5f754f5661ce9a56b4cff9f26ca2ba58";
+      httpRequest({  
+        method: "GET",
+        uri: foodAPIUrl,
+        json: true
+      }).then(function (json) {
+        console.log(json);
+        console.log(json[0].amount + "json amount");
+        costs.push(json[0].amount);
+        sum = sum+json[0].amount;
+        if (costs.length == foodIDs.length) {
+          findCurrentBalance(function(balance) {
+            sum = sum/costs.length;
+            if (balance >= sum) {
+              speech = "You can afford this food!"
+            } else {
+              speech = "You cannot afford this food. You have " + balance + "in your account and your average food costs " + sum;
+            }
+            replyToUser(request, response, assistant, speech);
+          });
+        }
+        console.log(costs + "costs");
+      })
+      .catch(function (err) {
+      });
+    }
+  }
+
+  // function findMerchantType(callback) {
+  //   console.log("success");
+  //   const merchAPIUrl = "http://api.reimaginebanking.com/merchants/" + merchID + "?key=5f754f5661ce9a56b4cff9f26ca2ba58";
+  //   console.log(merchAPIUrl);
+  //   httpRequest({  
+  //     method: "GET",
+  //     uri: merchAPIUrl,
+  //     json: true
+  //   }).then(function (json) {
+  //     console.log(json.category);
+  //     callback(json.category);
+  //   })
+  //   .catch(function (err) {
+  //     console.log("Error:" + err);
+  //     callback(0.0);
+  //   });
+  // }
   const actionMap = new Map();
   
   actionMap.set(WELCOME_ACTION, handleWelcome);
   actionMap.set(UBER_AVG_ACTION, handleAverageUber);
+  actionMap.set(FOOD_AVG_ACTION, handleAverageFood);
   
   assistant.handleRequest(actionMap);
 });
