@@ -60,8 +60,8 @@ def deposit(amount, date):
 # do_nessie_stuff(2.23, "2017-01-22", "58779cb61756fc834d8e8742")
 # do_nessie_stuff(18.45, "2017-01-01", "58779cb61756fc834d8e8742")
 # # RENT PAYMENT
-do_nessie_stuff(250, "2017-01-01", "5877b28b1756fc834d8e87ad")
-do_nessie_stuff(250, "2017-02-01", "5877b28b1756fc834d8e87ad")
+# do_nessie_stuff(250, "2017-01-01", "5877b28b1756fc834d8e87ad")
+# do_nessie_stuff(250, "2017-02-01", "5877b28b1756fc834d8e87ad")
 # WEEKLY DEPOSITS
 # deposit(100, "2017-01-01")
 # deposit(100, "2017-01-08")
@@ -77,8 +77,8 @@ do_nessie_stuff(250, "2017-02-01", "5877b28b1756fc834d8e87ad")
 # some bar: 57cf75cea73e494d8675ec57
 # cafe: 57cf75cea73e494d8675ec4d
 # dunkin:57cf75cea73e494d8675ec49
-# do_nessie_stuff(5.32, "2017-01-11", "57cf75cea73e494d8675ec5b")
-# do_nessie_stuff(34.32, "2017-01-11", "57cf75cea73e494d8675ec57")
-# do_nessie_stuff(7.84, "2017-01-01", "57cf75cea73e494d8675ec4d")
-# do_nessie_stuff(4.32, "2017-01-08", "57cf75cea73e494d8675ec49")
-# do_nessie_stuff(7.32, "2017-01-08", "57cf75cea73e494d8675ec49")
+do_nessie_stuff(5.32, "2017-01-11", "57cf75cea73e494d8675ec5b")
+do_nessie_stuff(34.32, "2017-01-20", "57cf75cea73e494d8675ec57")
+do_nessie_stuff(7.84, "2017-01-01", "57cf75cea73e494d8675ec4d")
+do_nessie_stuff(4.32, "2017-01-08", "57cf75cea73e494d8675ec49")
+do_nessie_stuff(7.32, "2017-01-08", "57cf75cea73e494d8675ec49")

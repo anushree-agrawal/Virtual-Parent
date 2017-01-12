@@ -4,12 +4,14 @@
   "description": "",
   "main": "app.js",
   "dependencies": {
+    "@google/maps": "^0.3.1",
     "actions-on-google": "1.0.4",
     "body-parser": "1.15.2",
     "express": "4.14.0",
-    "string_score": "^0.1.22",
+    "node-uber": "^0.9.7",
     "request": "^2.79.0",
-    "request-promise": "^4.1.1"
+    "request-promise": "^4.1.1",
+    "string_score": "^0.1.22"
   },
   "devDependencies": {},
   "scripts": {

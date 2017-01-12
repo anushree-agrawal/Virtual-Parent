@@ -10,6 +10,24 @@ const app = express();
 app.set("port", (process.env.PORT || 8080));
 app.use(bodyParser.json({type: "application/json"}));
 
+// Uber location code
+var googleMapsClient = require('@google/maps').createClient({
+  key: 'AIzaSyDO2dqH6MPcVW6D5rCbjP8zYG_e0wmGBbE'
+});
+var Uber = require('node-uber');
+var uber = new Uber({
+  client_id: '8sH7pWgHVe4P57LJltX8Maj_3EDVzTrA',
+  client_secret: '17Irb6HDzYj_t11gne4OJebqzKTExC6yvwvsxg52',
+  server_token: 'F5NW_guYCG7wzFftAzCaX4mB-ALL3e1c3NZxzH0y',
+  redirect_uri: 'REDIRECT URL',
+  name: 'VirtualParent',
+  language: 'en_US', // optional, defaults to en_US
+  sandbox: true // optional, defaults to false
+});
+
+var curr_lat = 38.887111;
+var curr_long = -77.095190;
+
 //read in summit data
 const jsonData = require("./data.json")
 
@@ -19,17 +37,26 @@ app.post("/", function (request, response) {
   const UBER_AVG_ACTION = "uber_avg";
   const FOOD_AVG_ACTION = "food_avg";
   const WELCOME_ACTION = "welcome";
+  const MORE_INFO_ACTION = "more_info";
+  // uber location
+  const UBER_LOCATION = "location";
   //API.AI assistant
   const assistant = new ApiAiAssistant({request: request, response: response});
 
   //Create functions to handle requests here:
   function handleWelcome (assistant) { //for Google Assistant only
-    assistant.ask("Hi, I'm software summit bot - ask me a question!");
+    assistant.ask("Hi, I'm a financial parent - ask me a question!");
   }
 
-  function handleAverageUber () {
-    const uberAPIUrl = "http://api.reimaginebanking.com/merchants/58779cb61756fc834d8e8742/accounts/5877aeff1756fc834d8e878c/purchases?key=5f754f5661ce9a56b4cff9f26ca2ba58";
+  function handleAverageUber (assistant) {
+    let location = assistant.getArgument(UBER_LOCATION);
     let sum = 0;
+    if (location != null) {
+      sum = getUberPrice(location);
+      console.log(sum);
+    }
+    const uberAPIUrl = "http://api.reimaginebanking.com/merchants/58779cb61756fc834d8e8742/accounts/5877aeff1756fc834d8e878c/purchases?key=5f754f5661ce9a56b4cff9f26ca2ba58";
+    
     let speech = ""
     let balance = 0;
 
@@ -39,14 +66,16 @@ app.post("/", function (request, response) {
       uri: uberAPIUrl,
       json: true
     }).then(function (json) {
-      sum =  findAverageCost(json);
+      if (location == null) {
+        sum =  findAverageCost(json);
+      }
       console.log('sum is : ' + sum);
       
       findCurrentBalance(function(balance) {
         if (balance >= sum) {
           speech = "You can afford this uber!"
         } else {
-          speech = "You cannot afford this uber. You have " + balance + "in your account and your average uber costs " + sum;
+          speech = "You cannot afford this uber. You have " + balance + "in your account and your average uber costs " + sum + "Do you want more info?";
         }
         replyToUser(request, response, assistant, speech);
       });
@@ -56,6 +85,33 @@ app.post("/", function (request, response) {
       //TODO: reply to user with some kind of error message
     });
   }
+
+  function getUberPrice(query_location) {
+    googleMapsClient.places({
+      query: query_location,
+      location: [curr_lat, curr_long],
+      radius: 50000
+    }, function(err, response) {
+      if (err) console.error(err);
+      else {
+        var coordinates = response.json.results[0].geometry.location;
+        var end_lat = coordinates.lat;
+        var end_long = coordinates.lng;
+
+        console.log(coordinates)
+
+        uber.estimates.getPriceForRoute(curr_lat, curr_long, end_lat, end_long, function (err, res) {
+          if (err) console.error(err);
+          else { 
+            var average = (res.prices[0].low_estimate + res.prices[0].high_estimate) / 2;
+            return average; 
+          }  
+        });
+        
+      }
+
+    });
+}
 
   function findAverageCost(json) {
     let i = 0;
@@ -105,9 +161,9 @@ app.post("/", function (request, response) {
           findCurrentBalance(function(balance) {
             sum = sum/costs.length;
             if (balance >= sum) {
-              speech = "You can afford this food!"
+              speech = "You can afford to eat out!"
             } else {
-              speech = "You cannot afford this food. You have " + balance + "in your account and your average food costs " + sum;
+              speech = "You cannot afford to eat out. You have " + balance + "in your account and your average restaurant bill is " + sum + "Do you want more info?";
             }
             replyToUser(request, response, assistant, speech);
           });
@@ -119,29 +175,31 @@ app.post("/", function (request, response) {
     }
   }
 
-  // function findMerchantType(callback) {
-  //   console.log("success");
-  //   const merchAPIUrl = "http://api.reimaginebanking.com/merchants/" + merchID + "?key=5f754f5661ce9a56b4cff9f26ca2ba58";
-  //   console.log(merchAPIUrl);
-  //   httpRequest({  
-  //     method: "GET",
-  //     uri: merchAPIUrl,
-  //     json: true
-  //   }).then(function (json) {
-  //     console.log(json.category);
-  //     callback(json.category);
-  //   })
-  //   .catch(function (err) {
-  //     console.log("Error:" + err);
-  //     callback(0.0);
-  //   });
-  // }
+  function handleMoreInfo() {
+    let weeks = 0
+    {
+      let newBalance = findCurrentBalance() - cost;
+      console.log('new balance is: ' + newBalance);
+      while(newBalance<0){
+        newBalance+= 100
+        weeks++;
+      }
+      console.log(weeks)
+      if (weeks == 1) {
+        speech = "You can afford this is in one week";
+      } else {
+        speech = "You can afford this in" + weeks + "weeks";
+      }
+      replyToUser(request, response, assistant, speech);
+      return weeks;
+    }
+  }
   const actionMap = new Map();
   
   actionMap.set(WELCOME_ACTION, handleWelcome);
   actionMap.set(UBER_AVG_ACTION, handleAverageUber);
   actionMap.set(FOOD_AVG_ACTION, handleAverageFood);
-  
+  actionMap.set(MORE_INFO_ACTION, handleMoreInfo);
   assistant.handleRequest(actionMap);
 });
 
