@@ -30,6 +30,9 @@ app.post("/", function (request, response) {
     const uberAPIUrl = "http://api.reimaginebanking.com/merchants/58779cb61756fc834d8e8742/accounts/5877aeff1756fc834d8e878c/purchases?key=5f754f5661ce9a56b4cff9f26ca2ba58";
     let sum = 0;
     let speech = ""
+    let balance = 0;
+
+    //  console.log(balance + "is balance");
     httpRequest({  
       method: "GET",
       uri: uberAPIUrl,
@@ -37,18 +40,19 @@ app.post("/", function (request, response) {
     }).then(function (json) {
       sum =  findAverageCost(json);
       console.log('sum is : ' + sum);
-      let balance = findCurrentBalance();
-      // TODO: Add in the rent and such here.
-      if (balance >= sum) {
-        speech = "You can afford this uber!"
-      } else {
-        speech = "You cannot afford this uber. You have " + balance + "in your account and your average uber costs " + sum;
-      }
-      replyToUser(request, response, assistant, speech);
-      return sum;
+      
+      findCurrentBalance(function(balance) {
+        if (balance >= sum) {
+          speech = "You can afford this uber!"
+        } else {
+          speech = "You cannot afford this uber. You have " + balance + "in your account and your average uber costs " + sum;
+        }
+        replyToUser(request, response, assistant, speech);
+      });
     })
     .catch(function (err) {
       console.log("Error:" + err);
+      //TODO: reply to user with some kind of error message
     });
   }
 
@@ -63,7 +67,7 @@ app.post("/", function (request, response) {
     return sum;
   }
 
-  function findCurrentBalance() {
+  function findCurrentBalance(callback) {
     const balanceURL = "http://api.reimaginebanking.com/accounts/5877aeff1756fc834d8e878c?key=5f754f5661ce9a56b4cff9f26ca2ba58";
     httpRequest({  
       method: "GET",
@@ -71,10 +75,11 @@ app.post("/", function (request, response) {
       json: true
     }).then(function (json) {
       console.log(json.balance);
-      return json.balance + "lol";
+      callback(json.balance);
     })
     .catch(function (err) {
       console.log("Error:" + err);
+      callback(0.0);
     });
   }
   const actionMap = new Map();
@@ -82,7 +87,6 @@ app.post("/", function (request, response) {
   actionMap.set(WELCOME_ACTION, handleWelcome);
   actionMap.set(UBER_AVG_ACTION, handleAverageUber);
   
-
   assistant.handleRequest(actionMap);
 });
 
