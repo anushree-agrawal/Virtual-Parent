@@ -129,7 +129,7 @@ app.post("/", function (request, response) {
     }, function(err, response) {
       if (err) {
       	console.error(err)
-      	callback(-1); 
+        callback(200); 
       }
       else {
         var coordinates = response.json.results[0].geometry.location;
@@ -141,7 +141,7 @@ app.post("/", function (request, response) {
         uber.estimates.getPriceForRoute(curr_lat, curr_long, end_lat, end_long, function (err, res) {
           if (err) {
           	console.error(err)
-          	callback(-1);
+          	callback(200);
           }
           else { 
             var average = (res.prices[0].low_estimate + res.prices[0].high_estimate) / 2;
