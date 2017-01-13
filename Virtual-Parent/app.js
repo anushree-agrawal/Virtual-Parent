@@ -47,7 +47,7 @@ app.post("/", function (request, response) {
 
   //Create functions to handle requests here:
   function handleWelcome (assistant) { //for Google Assistant only
-    assistant.ask("Hi, I'm your virtual financial parent - ask me a question!");
+    assistant.ask("Hi Kanye, I'm your virtual financial parent - ask me a question!");
   }
 
   function handleAverageUber (assistant) {
