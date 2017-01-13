@@ -47,7 +47,7 @@ app.post("/", function (request, response) {
 
   //Create functions to handle requests here:
   function handleWelcome (assistant) { //for Google Assistant only
-    assistant.ask("Hi, I'm a financial parent - ask me a question!");
+    assistant.ask("Hi, I'm your virtual financial parent - ask me a question!");
   }
 
   function handleAverageUber (assistant) {
@@ -62,14 +62,15 @@ app.post("/", function (request, response) {
 	    	var spendable = balance - DISCR; 
 	    	spendable = Math.round(spendable * 100) / 100; 
 	        if (spendable >= sum) {
-	          speech = "You can afford this uber! ";
-	          speech += "You have " + (Math.round(100 * balance) / 100) + 
-	        " dollars in your account and your uber costs " + sum + ". You should only spend " +
-	        (spendable - sum) + " dollars more this month. "; 
+	          speech = "You can afford this Uber! ";
+	          speech += "You have " + moneyToText(balance) + 
+	        " in your account and your Uber costs " + moneyToText(sum) + ". You should only spend " +
+	        moneyToText(spendable - sum) + " more this month. "; 
 	        } else {
-	          speech = "You cannot afford this uber. ";
-	          speech += "You have " + (Math.round(100 * balance) / 100) + 
-	        " dollars in your account and your uber costs " + sum + ". You will owe $250 on February 1st. You can afford this uber in " +
+	          speech = "You cannot afford this Uber. ";
+	          speech += "You have " + moneyToText(balance) + 
+	        " in your account and your Uber costs " + moneyToText(sum) + 
+	        ". You will owe 250 dollars on February 1st. You can afford this Uber in " +
 	        handleWhenCanAfford(balance, sum) + " weeks. ";
 	        }
 
@@ -97,14 +98,15 @@ app.post("/", function (request, response) {
 	    	spendable = Math.round(spendable * 100) / 100; 
 
 	        if (spendable >= sum) {
-	          speech = "You can afford this uber! ";
-	          speech += "You have " + (Math.round(100*balance) / 100) + 
-	        " dollars in your account and your uber costs " + sum + ". You should only spend " +
-	        (spendable - sum) + " dollars more this month. "; 
+	          speech = "You can afford this Uber! ";
+	          speech += "You have " + moneyToText(balance) + 
+	        " in your account and your uber costs " + moneyToText(sum) + ". You should only spend " +
+	        moneyToText(spendable - sum) + " dollars more this month. "; 
 	        } else {
-	          speech = "You cannot afford this uber. ";
-	          speech += "You have " + (Math.round(100*balance) / 100) + 
-	        " dollars in your account and your uber costs " + sum + ". You will owe $250 on February 1st. You can afford this uber in " +
+	          speech = "You cannot afford this Uber. ";
+	          speech += "You have " + moneyToText(balance) + 
+	        " in your account and your Uber costs " + moneyToText(sum) + 
+	        ". You will owe 250 dollars on February 1st. You can afford this Uber in " +
 	        handleWhenCanAfford(balance, sum) + " weeks. ";
 	        }
 
@@ -207,10 +209,11 @@ app.post("/", function (request, response) {
             spendable = Math.round(spendable * 100) / 100; 
 
             if (spendable >= sum) {
-              speech = "You can afford to eat out! If you do, you should only spend " + (spendable - sum) + " dollars more this month."; 
+              speech = "You can afford to eat out! If you do, you should only spend " + moneyToText(spendable - sum) + " more this month."; 
             } else {
-              speech = "You cannot afford to eat out. You have " + (Math.round(100*balance)/100) + 
-              " in your account and your average restaurant bill is " + sum + ". You will owe $250 on February 1st. You can afford this meal in " +
+              speech = "You cannot afford to eat out. You have " + moneyToText(balance) + 
+              " in your account and your average restaurant bill is " + moneyToText(sum) + 
+              ". You will owe 250 dollars on February 1st. You can afford this meal in " +
 	        handleWhenCanAfford(balance, sum) + " weeks. ";
             }
             replyToUser(request, response, assistant, speech);
@@ -244,7 +247,13 @@ function handleWhenCanAfford(currentBalance, cost) {
 	let discretionary = currentBalance - indiscretionary; 
     
     return Math.ceil((cost - discretionary) / pay); 
- }
+}
+
+function moneyToText(value) {
+	value = Math.round(value * 100) / 100;
+	return Math.floor(value) + " dollars and " + ((value * 100) % 100) + " cents"; 
+}
+
 
 // Utility functions
 function replyToUser(request, response, assistant, speech) {
