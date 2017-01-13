@@ -69,7 +69,7 @@ app.post("/", function (request, response) {
 	        } else {
 	          speech = "You cannot afford this uber. ";
 	          speech += "You have " + (Math.round(100 * balance) / 100) + 
-	        " dollars in your account and your uber costs " + sum + ". You can afford this uber in " +
+	        " dollars in your account and your uber costs " + sum + ". You will owe $250 on February 1st. You can afford this uber in " +
 	        handleWhenCanAfford(balance, sum) + " weeks. ";
 	        }
 
@@ -104,7 +104,7 @@ app.post("/", function (request, response) {
 	        } else {
 	          speech = "You cannot afford this uber. ";
 	          speech += "You have " + (Math.round(100*balance) / 100) + 
-	        " dollars in your account and your uber costs " + sum + ". You can afford this uber in " +
+	        " dollars in your account and your uber costs " + sum + ". You will owe $250 on February 1st. You can afford this uber in " +
 	        handleWhenCanAfford(balance, sum) + " weeks. ";
 	        }
 
@@ -210,7 +210,7 @@ app.post("/", function (request, response) {
               speech = "You can afford to eat out! If you do, you should only spend " + (spendable - sum) + " dollars more this month."; 
             } else {
               speech = "You cannot afford to eat out. You have " + (Math.round(100*balance)/100) + 
-              " in your account and your average restaurant bill is " + sum + ". You can afford this meal in " +
+              " in your account and your average restaurant bill is " + sum + ". You will owe $250 on February 1st. You can afford this meal in " +
 	        handleWhenCanAfford(balance, sum) + " weeks. ";
             }
             replyToUser(request, response, assistant, speech);
