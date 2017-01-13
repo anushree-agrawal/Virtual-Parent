@@ -54,20 +54,29 @@ app.post("/", function (request, response) {
     let speech = ""
     if (location != null) {
       getUberPrice(location, function(sum) {
+      	sum = Math.round(sum * 100) / 100; 
 		console.log('sum is : ' + sum);
 	    findCurrentBalance(function(balance) {
-	        if (balance >= sum) {
-	          speech = "You can afford this uber!"
+	    	var spendable = balance + 400-350; 
+	    	spendable = Math.round(spendable * 100) / 100; 
+	        if (spendabe >= sum) {
+	          speech = "You can afford this uber! ";
+	          speech += "You have " + (Math.round(100 * balance) / 100) + 
+	        " dollars in your account and your uber costs " + sum + ". You should only spend " +
+	        (spendable - sum) + " dollars more this month. "; 
 	        } else {
-	          speech = "You cannot afford this uber. You have " + balance + "in your account and your uber costs " + sum + " Do you want more info?";
+	          speech = "You cannot afford this uber. ";
+	          speech += "You have " + (Math.round(100 * balance) / 100) + 
+	        " dollars in your account and your uber costs " + sum + ". You can afford this uber in " +
+	        handleWhenCanAfford(balance, sum) + " weeks. ";
 	        }
+
 	        replyToUser(request, response, assistant, speech);
 	      });
       });
       
     } else {
 	    const uberAPIUrl = "http://api.reimaginebanking.com/merchants/58779cb61756fc834d8e8742/accounts/5877aeff1756fc834d8e878c/purchases?key=5f754f5661ce9a56b4cff9f26ca2ba58";
-	    
 	    
 	    let balance = 0;
 
@@ -78,14 +87,25 @@ app.post("/", function (request, response) {
 	      json: true
 	    }).then(function (json) {
 	      sum =  findAverageCost(json);
+	      sum = Math.round(sum * 100) / 100; 
 	      console.log('sum is : ' + sum);
 	      
-	      findCurrentBalance(function(balance) {
-	        if (balance >= sum) {
-	          speech = "You can afford this uber!"
+	      findCurrentBalance(function(currentBalance) {
+	    	var spendable = balance + 400-350;
+	    	spendable = Math.round(spendable * 100) / 100; 
+
+	        if (spendabe >= sum) {
+	          speech = "You can afford this uber!";
+	          speech += "You have " + (Math.round(100*balance) / 100) + 
+	        " dollars in your account and your uber costs " + sum + ". You should only spend " +
+	        (spendable - sum) + " dollars more this month. "; 
 	        } else {
-	          speech = "You cannot afford this uber. You have " + balance + "in your account and your average uber costs " + sum + "Do you want more info?";
+	          speech = "You cannot afford this uber. ";
+	          speech += "You have " + (Math.round(100*balance) / 100) + 
+	        " dollars in your account and your uber costs " + sum + ". You can afford this uber in " +
+	        handleWhenCanAfford(balance, sum) + " weeks. ";
 	        }
+
 	        replyToUser(request, response, assistant, speech);
 	      });
 	    })
@@ -178,11 +198,18 @@ app.post("/", function (request, response) {
         sum = sum+json[0].amount;
         if (costs.length == foodIDs.length) {
           findCurrentBalance(function(balance) {
+
             sum = sum/costs.length;
-            if (balance >= sum) {
-              speech = "You can afford to eat out!"
+            sum = Math.round(sum * 100) / 100; 
+            var spendable = balance + 400-350;
+            spendable = Math.round(spendable * 100) / 100; 
+
+            if (spendable >= sum) {
+              speech = "You can afford to eat out! If you do, you should only spend " + (spendable - sum) + " dollars more this month."; 
             } else {
-              speech = "You cannot afford to eat out. You have " + balance + "in your account and your average restaurant bill is " + sum + "Do you want more info?";
+              speech = "You cannot afford to eat out. You have " + (Math.round(100*balance)/100) + 
+              " in your account and your average restaurant bill is " + sum + ". You can afford this meal in " +
+	        handleWhenCanAfford(balance, sum) + " weeks. ";
             }
             replyToUser(request, response, assistant, speech);
           });
@@ -194,25 +221,7 @@ app.post("/", function (request, response) {
     }
   }
 
-  function handleMoreInfo() {
-    let weeks = 0
-    {
-      let newBalance = findCurrentBalance() - cost;
-      console.log('new balance is: ' + newBalance);
-      while(newBalance<0){
-        newBalance+= 100
-        weeks++;
-      }
-      console.log(weeks)
-      if (weeks == 1) {
-        speech = "You can afford this is in one week";
-      } else {
-        speech = "You can afford this in" + weeks + "weeks";
-      }
-      replyToUser(request, response, assistant, speech);
-      return weeks;
-    }
-  }
+
   const actionMap = new Map();
   
   actionMap.set(WELCOME_ACTION, handleWelcome);
@@ -227,6 +236,33 @@ const server = app.listen(app.get("port"), function () {
   console.log("App listening on port %s", server.address().port);
   console.log("Press Ctrl+C to quit.");
 });
+
+function handleWhenCanAfford(currentBalance, cost) {    
+    let weeks = 0
+     {
+      let discretionary = currentBalance + 400-350; 
+      console.log('discretionary is: ' + discretionary);
+      if(discretionary>cost+200){
+        return 0;
+      }
+      else if (discretionary <=cost){
+        while(discretionary < 200){
+        discretionary+= 100
+        weeks++
+      	}
+        return weeks;
+      }
+      else if (discretionary > cost && discretionary < 200){
+        while(discretionary < 200){
+        discretionary += 100
+        weeks++
+      	}
+        return weeks; 
+      }
+
+      return weeks;
+    }
+  }
 
 // Utility functions
 function replyToUser(request, response, assistant, speech) {
