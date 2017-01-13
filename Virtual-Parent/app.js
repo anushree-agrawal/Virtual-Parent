@@ -57,9 +57,9 @@ app.post("/", function (request, response) {
       	sum = Math.round(sum * 100) / 100; 
 		console.log('sum is : ' + sum);
 	    findCurrentBalance(function(balance) {
-	    	var spendable = balance + 400-350; 
+	    	var spendable = balance; 
 	    	spendable = Math.round(spendable * 100) / 100; 
-	        if (spendabe >= sum) {
+	        if (spendable >= sum) {
 	          speech = "You can afford this uber! ";
 	          speech += "You have " + (Math.round(100 * balance) / 100) + 
 	        " dollars in your account and your uber costs " + sum + ". You should only spend " +
@@ -90,12 +90,12 @@ app.post("/", function (request, response) {
 	      sum = Math.round(sum * 100) / 100; 
 	      console.log('sum is : ' + sum);
 	      
-	      findCurrentBalance(function(currentBalance) {
-	    	var spendable = balance + 400-350;
+	      findCurrentBalance(function(balance) {
+	    	var spendable = balance;
 	    	spendable = Math.round(spendable * 100) / 100; 
 
-	        if (spendabe >= sum) {
-	          speech = "You can afford this uber!";
+	        if (spendable >= sum) {
+	          speech = "You can afford this uber! ";
 	          speech += "You have " + (Math.round(100*balance) / 100) + 
 	        " dollars in your account and your uber costs " + sum + ". You should only spend " +
 	        (spendable - sum) + " dollars more this month. "; 
@@ -201,7 +201,7 @@ app.post("/", function (request, response) {
 
             sum = sum/costs.length;
             sum = Math.round(sum * 100) / 100; 
-            var spendable = balance + 400-350;
+            var spendable = balance;
             spendable = Math.round(spendable * 100) / 100; 
 
             if (spendable >= sum) {
@@ -227,7 +227,6 @@ app.post("/", function (request, response) {
   actionMap.set(WELCOME_ACTION, handleWelcome);
   actionMap.set(UBER_AVG_ACTION, handleAverageUber);
   actionMap.set(FOOD_AVG_ACTION, handleAverageFood);
-  actionMap.set(MORE_INFO_ACTION, handleMoreInfo);
   assistant.handleRequest(actionMap);
 });
 
@@ -238,31 +237,12 @@ const server = app.listen(app.get("port"), function () {
 });
 
 function handleWhenCanAfford(currentBalance, cost) {    
-    let weeks = 0
-     {
-      let discretionary = currentBalance + 400-350; 
-      console.log('discretionary is: ' + discretionary);
-      if(discretionary>cost+200){
-        return 0;
-      }
-      else if (discretionary <=cost){
-        while(discretionary < 200){
-        discretionary+= 100
-        weeks++
-      	}
-        return weeks;
-      }
-      else if (discretionary > cost && discretionary < 200){
-        while(discretionary < 200){
-        discretionary += 100
-        weeks++
-      	}
-        return weeks; 
-      }
-
-      return weeks;
-    }
-  }
+	let indiscretionary = 250;
+	let pay = 100;
+	let discretionary = currentBalance - indiscretionary; 
+    
+    return Math.ceil((cost - discretionary) / pay); 
+ }
 
 // Utility functions
 function replyToUser(request, response, assistant, speech) {
