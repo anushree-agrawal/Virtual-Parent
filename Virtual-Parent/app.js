@@ -40,6 +40,8 @@ app.post("/", function (request, response) {
   const MORE_INFO_ACTION = "more_info";
   // uber location
   const UBER_LOCATION = "location";
+  // 250 - amount he has to pay a month and 200 is amt for pay periods left
+  const DISCR = 250 - 200;
   //API.AI assistant
   const assistant = new ApiAiAssistant({request: request, response: response});
 
@@ -57,7 +59,7 @@ app.post("/", function (request, response) {
       	sum = Math.round(sum * 100) / 100; 
 		console.log('sum is : ' + sum);
 	    findCurrentBalance(function(balance) {
-	    	var spendable = balance; 
+	    	var spendable = balance - DISCR; 
 	    	spendable = Math.round(spendable * 100) / 100; 
 	        if (spendable >= sum) {
 	          speech = "You can afford this uber! ";
@@ -91,7 +93,7 @@ app.post("/", function (request, response) {
 	      console.log('sum is : ' + sum);
 	      
 	      findCurrentBalance(function(balance) {
-	    	var spendable = balance;
+	    	var spendable = balance - DISCR;
 	    	spendable = Math.round(spendable * 100) / 100; 
 
 	        if (spendable >= sum) {
@@ -201,7 +203,7 @@ app.post("/", function (request, response) {
 
             sum = sum/costs.length;
             sum = Math.round(sum * 100) / 100; 
-            var spendable = balance;
+            var spendable = balance - DISCR;
             spendable = Math.round(spendable * 100) / 100; 
 
             if (spendable >= sum) {
